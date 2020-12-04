@@ -2,7 +2,6 @@
  *  Using hiletgo esp8266
  *  More info at https://www.amazon.com/gp/product/B081CSJV2V/
  */
- 
 
 #include <ESP8266WiFi.h>
 #include "config.h"
