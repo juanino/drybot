@@ -7,5 +7,6 @@ where you should have a water sensor.
 # demo
 [Youtube Demo](https://youtu.be/TYNeofcWZgk)
 
+# hardware
 ![sensor pic](./img/sensor.png)
 ![controller pic](./img/controller.png)
