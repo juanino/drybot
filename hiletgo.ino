@@ -10,7 +10,7 @@
    ssdid, password, hostname or ip */
 
 // fixed items
-const char* devicename = "laundry1";
+const char* devicename = "storage-closet";
 const int water1 = 16; // water sensor plate on pin D0
 const int water2 = 4; // seond water sensor on pin D2
 const int floodLed = 5; // LED on pin D1
@@ -48,7 +48,7 @@ void setup() {
   digitalWrite(runningLed, LOW);
   setup_wifi();
   digitalWrite(runningLed, HIGH);
-  String msg = "sensor-bootup-" + String(devicename);
+  String msg = "sensor%20bootup%20" + String(devicename);
   send_ifttt(msg);
 }
 
