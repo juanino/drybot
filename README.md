@@ -8,6 +8,10 @@ where you should have a water sensor.
 Alerts are sent by hitting a url webhook at IFTTT,
 "if webhook then send a push notification from ifttt app".
 
+# Install
+- Copy config.h.sample to config.h
+- Set wifi and other details in config.h
+
 # demo
 [Youtube Demo](https://youtu.be/TYNeofcWZgk)
 
