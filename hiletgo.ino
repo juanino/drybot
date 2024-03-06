@@ -6,13 +6,15 @@
 #include <ESP8266WiFi.h>
 #include "config.h"
 
+#include "Pushover.h"
+
 /* Adjust your secrets in config.h 
    ssdid, password, hostname or ip */
 
 // fixed items
-const char* devicename = "storage-closet";
+const char* devicename = "washing machine";
 const int water1 = 16; // water sensor plate on pin D0
-const int water2 = 4; // seond water sensor on pin D2
+const int water2 = 4; // second water sensor on pin D2
 const int floodLed = 5; // LED on pin D1
 const int runningLed = 2; // onboard BLUE led used to visually confirm the program is running
 const int max_alerts = 4; // number of alerts before we trip a breaker and stop alerting
@@ -29,8 +31,11 @@ int alerts = 0; // how many alerts have been sent
 int silent = 0; // 0 = not silent , 1 = silent mode
 unsigned long breaker_hit_ms = 0; // store miliseconds uptime when we hit circuit breaker
 
+// push message service setup
+Pushover po = Pushover(app_key, user_key, UNSAFE);
 
 void setup() {
+
   // Water sensor setup 
   // initialize the LED pin as an output:
   pinMode(floodLed, OUTPUT);
@@ -48,15 +53,15 @@ void setup() {
   digitalWrite(runningLed, LOW);
   setup_wifi();
   digitalWrite(runningLed, HIGH);
-  String msg = "sensor%20bootup%20" + String(devicename);
-  send_ifttt(msg);
+  String msg = "sensor bootup " + String(devicename);
+  send_po(msg,1);
 }
 
 
 // main loop
 void loop() {
   /* check sensor
-   * call send_ifttt for push msg
+   * call send_po for push msg
    * call sendsensor flask post and SMS 
    */
      
@@ -76,7 +81,7 @@ void loop() {
     if (prior_silent_state != silent) {
       // state change to break on occured
       String msg = "breaker" + String(silent);
-      send_ifttt(msg);
+      send_po(msg,2);
       delay(1000);
     }
   }
@@ -102,16 +107,16 @@ void check_water(int sensorpin, int* prior_state, int* waterXstate ) {
     Serial.println("plate wet: light should go ON");
     delay(500);
     String wet_msg = String(sensorpin) + "wet";
-    send_ifttt(wet_msg);
+    send_po(wet_msg,2);
     delay(500);
-    sendsensor(1,sensorpin); // call out to flask 0=dry 1=wet
+    // sendsensor(1,sensorpin); // call out to flask 0=dry 1=wet
   } else {
     // turn LED off:
     digitalWrite(floodLed, LOW);
     Serial.println("plate dry: light should go OFF");
-    sendsensor(0,sensorpin); // call out to flask 0=dry 1=wet
+    // sendsensor(0,sensorpin); // call out to flask 0=dry 1=wet
     String dry_msg = String(sensorpin) + "dry";
-    send_ifttt(dry_msg);
+    send_po(dry_msg,2);
     delay(500);
   }
 }
@@ -131,7 +136,7 @@ int circuit_breaker() {
     silent = 0;
     if (prior_silent != silent) {
       String msg = "breaker0";
-      send_ifttt(msg);
+      send_po(msg,2);
     }
     alerts = 0;
     breaker_hit_ms = current_ms;
@@ -227,53 +232,6 @@ void sendsensor(int status, int sensorpin) {
   Serial.println("closing connection on SENDSENSOR------------");
 }
 
-
-
-void send_ifttt(String status) {
-  Serial.println("Status is" + status);
-  delay(1000);
-  if (silent == 1 && status != "breaker1" && status != "breaker0") {
-    // let it through if it's a breaker message so we know
-    // we tripped the breaker
-    Serial.println("skipping send due to circuit breaker");
-    return;
-  }
-  // here is where you should do some logic
-  // like read a sensor to send to the server
-  alerts++;
-  Serial.print("sendsensor: connecting to ");
-  Serial.println(ifttt);
-  
-  // Use WiFiClient class to create TCP connections
-  WiFiClient client;
-  if (!client.connect(ifttt, 80)) {
-    Serial.println("connection failed");
-    return;
-  }
-  
-  // We now create a URI for the request
-  String url = "/trigger/water1/with/key/";
-  Serial.print("Requesting URL: ");
-  Serial.println(url + "SECRET KEY"); // key is ifttt_key from config.h
-  
-  // This will send the HTTP request to the server
-  String full_url = (String("GET ") + url + ifttt_key + "?value1=" + status + " HTTP/1.1\r\n" +
-               "Host: " + ifttt + "\r\n" + 
-               "Connection: close\r\n\r\n");
-  Serial.println("trying: " + full_url);
-  client.print(full_url);
-
-  delay(500);
-  // Read all the lines of the reply from server and print them to Serial
-  while(client.available()){
-    String line = client.readStringUntil('\r');
-    // Serial.print(line);
-  }
-  
-  Serial.println();
-  Serial.println("closing connection on IFTTT ------------");
-}
-
 void flash_flood(int beeps) {
   // small loop to flash the flood light
   // this signals bootup or other events
@@ -287,3 +245,21 @@ void flash_flood(int beeps) {
     digitalWrite(floodLed, LOW);
   }
 }
+
+void send_po(String msg, int sound) {
+  String msg2 = msg + String(devicename);
+  po.setDevice("iphone");
+  po.setPriority(2);
+  po.setRetry(60);
+  po.setExpire(900);
+  if (sound == 1) {
+    po.setSound("siren");  
+  } 
+  else if (sound == 2) {
+    po.setSound("alien");
+  } else {
+    po.setSound("alien");
+  }
+  po.setMessage(msg);
+  Serial.println(po.send()); //should return 1 on success
+  }

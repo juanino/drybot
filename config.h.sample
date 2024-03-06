@@ -2,5 +2,6 @@ const char* ssid     = "XXXXXXX";
 const char* password = "XXXXXXXXXXX";
 
 const char* host = "XXXXXXXXXXXXX"; # flask host
-const char* ifttt = "maker.ifttt.com";
-const char* ifttt_key = "XXXXXXXXXXXXXXXXXXXXXX";
+
+const char* user_key = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+const char* app_key = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
